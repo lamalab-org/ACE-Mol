@@ -10,6 +10,12 @@ Here, we show how to use the current pre-trained ACEMol. Additionally we showcas
 
 Text based nature of ACEMol makes predicion of floating point values quirky; we recommend embedding inputs and computing logprobs for prediction tasks.
 
+## Set up the environment
+
+```
+conda create --name acemol --file requirements.txt python=3.12
+```
+
 ## Use pre-trained ACEMol
 
 PretrainedACEMol helper class enables easy use of the pre-trained models from [hf](https://huggingface.co/collections/jablonkagroup/ace-mol) or local finetuned model from .ckpt file.
