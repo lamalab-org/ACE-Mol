@@ -1,0 +1,2 @@
+from src.tokenizer.bert_smiles_tokenizer import BertSmilesTokenizer
+from src.tokenizer.regex_tokenizer import RegexTokenizer

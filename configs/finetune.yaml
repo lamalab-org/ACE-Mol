@@ -1,0 +1,78 @@
+base:
+  models_dir: ./models
+model:
+  model_name: finetuned
+  model: big_boy
+  optimizer_type: adam
+  alpha: 10 # 500
+  metric: roc_auc
+  task: None
+  optimizer_params:
+    weight_decay: 0.01
+    betas: [0.9, 0.99]
+    eps: 1.0e-8
+    lr: 5.0e-6
+  scheduler_params:
+    warmup_steps: 100
+  parameters:
+    architectures: [ModernBertForMaskedLM]
+    attention_bias: false
+    attention_dropout: 0
+    bos_token_id: 50281
+    classifier_activation: gelu
+    classifier_bias: false
+    classifier_dropout: 0
+    classifier_pooling: mean
+    cls_token_id: 50281
+    decoder_bias: true
+    deterministic_flash_attn: false
+    embedding_dropout: 0
+    eos_token_id: 50282
+    global_attn_every_n_layers: 3
+    global_rope_theta: 160000
+    gradient_checkpointing: false
+    hidden_activation: gelu
+    hidden_size: 768 
+    initializer_cutoff_factor: 2
+    initializer_range: 0.02
+    intermediate_size: 1152
+    layer_norm_eps: 1.0e-05
+    local_attention: 128
+    local_rope_theta: 10000
+    max_position_embeddings: 1024 # 8192
+    mlp_bias: false
+    mlp_dropout: 0
+    model_type: modernbert
+    norm_bias: false
+    norm_eps: 1.0e-05
+    num_attention_heads: 12 # 12
+    num_hidden_layers: 22
+    pad_token_id: 50283
+    position_embedding_type: absolute
+    sep_token_id: 50282
+    tie_word_embeddings: true
+    torch_dtype: float32
+    transformers_version: 4.47.0.dev0
+    vocab_size: 50944
+data:
+  task: smilesprop
+  alternating: False
+  batch_size: 16
+  steps: 2
+  eval_data_file: ./data/test
+  val_data_file:  ./data/val
+  train_data_file:  ./data/train
+  cache_dir: ./cache
+  collators:
+    sentence:
+      padd_same: True
+    smiles:
+      mask_prob: 0.25
+      padd_same: True
+train:
+  seed: 0
+  trainer:
+    accelerator: cuda
+    max_epochs: 20
+    log_every_n_steps: 1
+    devices: 1
