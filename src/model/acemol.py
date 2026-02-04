@@ -84,7 +84,7 @@ class ACEMol(LightningModule):
         Args:
             pre_trained (str): Path to pre-trained model (pl checkpoint).
         """
-        if pre_trained.startswith('jablonkagroup'):
+        if isinstance(pre_trained, str) and pre_trained.startswith('jablonkagroup'):
             self.net.model = ModernBertForMaskedLM.from_pretrained(pre_trained)
         else:
             state_dict = torch.load(pre_trained, map_location='cpu')

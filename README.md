@@ -6,9 +6,9 @@
 
 # How to guide
 
-Here, we show how to use the current pre-trained ACEMol. Additionally we showcase how to fine-tune or re-train your own version of ACEMol from scratch.
+Here, we show how to use the current pre-trained ACEMol. Additionally, we showcase how to fine-tune or retrain your own version of ACEMol from scratch.
 
-Text based nature of ACEMol makes predicion of floating point values quirky; we recommend embedding inputs and computing logprobs for prediction tasks.
+The text-based nature of ACEMol makes prediction of floating-point values quirky; we recommend embedding inputs and computing logprobs for prediction tasks.
 
 ## Set up the environment
 
@@ -18,7 +18,7 @@ conda create --name acemol --file requirements.txt python=3.12
 
 ## Use pre-trained ACEMol
 
-PretrainedACEMol helper class enables easy use of the pre-trained models from [hf](https://huggingface.co/collections/jablonkagroup/ace-mol) or local finetuned model from .ckpt file.
+PretrainedACEMol helper class enables easy use of the pre-trained models from [hf](https://huggingface.co/collections/jablonkagroup/ace-mol) or a local finetuned model from a .ckpt file.
 
 ```python
 from src.pretrained import PretrainedACEMol
@@ -27,7 +27,7 @@ from src.pretrained import PretrainedACEMol
 acemol = PretrainedACEMol()
 ```
 
-PretrainedACEMol accepts a list of SMILES, corresponding targets and task descriptions (one task description is enough if it is shared).
+PretrainedACEMol accepts a list of SMILES, corresponding targets, and task descriptions (one task description is enough if it is shared).
 
 ```python
 molecules = [
@@ -43,7 +43,7 @@ task = 'is halogen group present'
 targets = [0, 1, 0, 0, 1, 1]
 ```
 
-We recommend using ACE-Mol as an embedding model; embedd method will create an embedding excluding the actual target and prepare a dataframe for classification or regression via logprobs.
+We recommend using ACE-Mol as an embedding model; the embed method will create an embedding excluding the actual target and prepare a dataframe for classification or regression via logprobs.
 
 ```python
 
@@ -58,35 +58,35 @@ predictions = acemol.classify(train, test)
 
 # Train your own model
 
-We provide two additional scripts to re-train and fine-tune ACE-Mol
+We provide two additional scripts to re-train and fine-tune ACE-Mol.
 
 ## Data Format
 
 We provide pre-training and toxicity [datasets](https://huggingface.co/collections/jablonkagroup/ace-mol).
 
-If you want to use your own dataset for fine-tuning you will have to use the same format as the datasets above.
+If you want to use your own dataset for fine-tuning, you will have to use the same format as the datasets above.
 
 ## Training from scratch
 
 ```
 python3 src/train.py \
-    -c "./configs/config.yaml" \
-    -e "./data/test" \
-    -t "./data/train" \
-    -v "./data/validation" \
-    -m "model_name"
+ -c "./configs/config.yaml" \
+ -e "./data/test" \
+ -t "./data/train" \
+ -v "./data/validation" \
+ -m "model_name"
 ```
 
 ## Fine-tuning
 
 ```
 python3 src/finetune.py \
-    -p "jablonkagroup/ACEMol" \
-    -c "./configs/finetune.yaml" \
-    -e "./data/test" \
-    -t "./data/train" \
-    -v "./data/validation" \
-    -m "model_name"
+ -p "jablonkagroup/ACEMol" \
+ -c "./configs/finetune.yaml" \
+ -e "./data/test" \
+ -t "./data/train" \
+ -v "./data/validation" \
+ -m "model_name"
 ```
 
 # Cite

@@ -5,6 +5,8 @@ import yaml
 import json
 import torch
 
+from tqdm import tqdm
+
 import numpy as np
 import pandas as pd
 
@@ -19,6 +21,34 @@ from transformers import BertTokenizer, AutoTokenizer, AutoModel
 from torch.utils.data import DataLoader
 
 from src.utils.search import GreedySearch
+
+from rdkit import Chem
+from rdkit.Chem.Scaffolds import MurckoScaffold
+
+def generate_scaffold(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    return MurckoScaffold.MurckoScaffoldSmiles(mol=mol)
+
+def scaffold_kfold_split(smiles_list, k=5, seed=42):
+    # Get scaffolds
+    scaffolds = [generate_scaffold(s) for s in smiles_list]
+
+    # Group molecules by scaffold
+    scaffold_dict = {}
+    for i, scaf in enumerate(scaffolds):
+        scaffold_dict.setdefault(scaf, []).append(i)
+
+    # Now split scaffolds instead of molecules
+    scaffold_keys = list(scaffold_dict.keys())
+    rng = np.random.default_rng(seed)
+    rng.shuffle(scaffold_keys)
+
+    # Assign scaffold groups to folds
+    folds = [[] for _ in range(k)]
+    for i, scaf in enumerate(scaffold_keys):
+        folds[i % k].extend(scaffold_dict[scaf])
+
+    return folds
 
 def embed_target_masked(
     data: pd.DataFrame, 
@@ -41,22 +71,24 @@ def embed_target_masked(
     """
     from src.data import PromptPropertyCollator
     
+    data = data.copy()
+    
     model.eval()
 
     collator = PromptPropertyCollator(tokenizer, device)
 
-    ds = Dataset.from_dict({"text": data['text'].values.tolist()})
-    ds = ds.map(lambda b: tokenizer.encode(b), batched=True)
-    dl = DataLoader(ds, collate_fn=collator, batch_size=batch_size)
+    ds = Dataset.from_pandas(data[['text']], preserve_index=False)
+    ds = ds.map(lambda b: tokenizer(b), batched=True)
+    dl = DataLoader(ds, collate_fn=collator, batch_size=batch_size, shuffle=False)
 
     embeddings = []
 
-    for b in dl:
+    for b in tqdm(dl):
         model_output = model(b['input_ids'], b['attention_mask'], output_hidden_states=True)
-        emb = model_output['hidden_states'][-1].mean(axis=0).cpu().detach().tolist()
+        emb = model_output['hidden_states'][-1].cpu().detach().numpy()
 
         for e, t in zip(emb, b['text']):
-            embeddings.append({'text': t, 'embeddings': e})
+            embeddings.append({'text': t, 'embeddings': e.mean(axis=0)})
 
     embeddings = pd.DataFrame(embeddings)
 
@@ -88,10 +120,8 @@ def load_latest_checkpoint(cnf: Dict, tokenizer: BertTokenizer, root:str) -> Lig
 
     chkp = Path(pth) / Path(last)
 
-    if cnf['model'] == 'big_boy':
-        m = model.BigBoy.load_from_checkpoint(chkp, **cnf, tokenizer=tokenizer, root_dir=root)
-    else:
-        m = model.RTPlussModule.load_from_checkpoint(chkp, **cnf, tokenizer=tokenizer, root_dir=root)
+    m = model.ACEMol.load_from_checkpoint(chkp, **cnf, tokenizer=tokenizer, root_dir=root)
+        
     return m, chkp
 
 def load_best_checkpoint(dir: str, metric: str) -> str:

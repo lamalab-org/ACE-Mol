@@ -11,10 +11,12 @@ from sklearn.linear_model import LogisticRegression, Lasso
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MinMaxScaler
 
-from transformers import AutoTokenizer, AutoModel, AutoConfig
+from transformers import AutoTokenizer, ModernBertForMaskedLM, AutoModelForMaskedLM, AutoConfig
 
-from src.utils import to_dataset, embed_target_masked
+from src.utils import to_dataset, embed_target_masked, generate_scaffold, scaffold_kfold_split
 from src.tokenizer import BertSmilesTokenizer
+
+torch.set_float32_matmul_precision('medium')
 
 class PretrainedACEMol():
     """ACEMol wrapper for easier use of pre-trained model.
@@ -41,20 +43,27 @@ class PretrainedACEMol():
         if path.endswith('.ckpt'):
             base_model = 'jablonkagroup/ACEMol'
             
-            ckpt = torch.load(path, map_location=device)
+            ckpt = torch.load(path, map_location=self.device)
             state_dict = ckpt["state_dict"] if "state_dict" in ckpt else ckpt
     
-            state_dict = {
-                k.replace("model.", "").replace("module.", ""): v
-                for k, v in state_dict.items()
-            }
+            new_state_dict = dict()
+            
+            for k, v in state_dict.items():
+                if "model.model." in k:
+                    k = k.replace("model.model.", "model.")
+                elif "model." in k:
+                    k = k.replace("model.", "")
+
+                k = k.replace("net.", "")
+
+                new_state_dict[k] = v
             
             config = AutoConfig.from_pretrained(base_model)
-            self.model = AutoModel.from_config(config).to(device)
+            self.model = AutoModelForMaskedLM.from_config(config).to(self.device)
     
-            self.model.load_state_dict(state_dict, strict=False)
+            self.model.load_state_dict(new_state_dict)
         else:
-            self.model = AutoModel.from_pretrained(path).to(device)
+            self.model = ModernBertForMaskedLM.from_pretrained(path, torch_dtype='auto').to(self.device)
 
         self.tokenizer = BertSmilesTokenizer()
 
@@ -79,10 +88,10 @@ class PretrainedACEMol():
         x = train['embeddings'].values.tolist()
         y = train['target'].values.tolist()
     
-        lambda_theory = np.sqrt(2 * np.log(len(x)) / len(x))
+        lambda_theory = np.sqrt(2 * np.log(len(x[0])) / len(x))
     
         pipe = Pipeline([
-            ("scaler", MinMaxScaler()),
+            ('scaler', MinMaxScaler()),
             ("clf", LogisticRegression(
                 penalty="l1",
                 solver="liblinear",
@@ -93,7 +102,7 @@ class PretrainedACEMol():
     
         if multiclass:
             pipe = Pipeline([
-                ("scaler", MinMaxScaler()),
+                ('scaler', MinMaxScaler()),
                 ("clf", OneVsRestClassifier(
                     LogisticRegression(
                     penalty="l1",
@@ -113,7 +122,7 @@ class PretrainedACEMol():
             test[f'class_probability_{pipe.classes_[i]}'] = probs[:, i].tolist()
     
         return test
-
+    
     def regress(
         self,
         train: pd.DataFrame,
@@ -134,10 +143,10 @@ class PretrainedACEMol():
         x = train['embeddings'].values.tolist()
         y = train['target'].values.tolist()
     
-        lambda_theory = np.sqrt(2 * np.log(len(x)) / len(x))
+        lambda_theory = np.sqrt(2 * np.log(len(x[0])) / len(x))
     
         pipe = Pipeline([
-            ("scaler", MinMaxScaler()),
+            ('scaler', MinMaxScaler()),
             ("reg", Lasso(1/lambda_theory)),
         ])
         
