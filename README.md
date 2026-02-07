@@ -31,7 +31,7 @@ PretrainedACEMol accepts a list of SMILES, corresponding targets, and task descr
 
 ```python
 molecules = [
-    'O=C(/C=C\c1ccccc1)OCc1cncs1',
+    'O=C(/C=C\\c1ccccc1)OCc1cncs1',
     'CCC(C)C(CN(C)C)c1ccc(Cl)cc1Cl',
     'CCOC(=O)CC(N)c1ccc(OC)cc1',
     'CN(C)Cc1ccccc1O',
@@ -91,3 +91,11 @@ python3 src/finetune.py \
 
 # Cite
 
+```
+@article{prastalo2026learning,
+  title={Beyond Learning on Molecules by Weakly Supervising on Molecules},
+  author={Gordan Prastalo and Kevin Maik Jablonka},
+  journal={arXiv preprint arXiv:2602.04696},
+  year={2026}
+}
+```
