@@ -50,7 +50,7 @@ We recommend using ACE-Mol as an embedding model; the embed method will create a
 embedded = acemol.embed(molecules, tasks, targets)
 
 # split into train and test
-train, test = embedd[:3], embedd[3:]
+train, test = embedded[:3], embedded[3:]
 
 # use regress method for regression.
 predictions = acemol.classify(train, test)
